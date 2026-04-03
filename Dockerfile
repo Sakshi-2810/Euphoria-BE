@@ -1,14 +1,19 @@
 # ---------- Stage 1: Build the JAR ----------
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM gradle:8.7-jdk21 AS build
 WORKDIR /app
 
-# Copy pom.xml first to leverage Docker cache
-COPY pom.xml .
-RUN mvn dependency:go-offline
+# Copy only Gradle config first (for caching dependencies)
+COPY build.gradle settings.gradle gradlew ./
+COPY gradle ./gradle
 
-# Copy source and build
+# Download dependencies (cache layer)
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source code
 COPY src ./src
-RUN mvn clean install -DskipTests
+
+# Build JAR
+RUN ./gradlew clean build -x test --no-daemon
 
 
 # ---------- Stage 2: Runtime ----------
@@ -16,7 +21,7 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copy JAR from build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/build/libs/*.jar app.jar
 
 # Spring Boot default port
 EXPOSE 8080
