@@ -1,29 +1,35 @@
-# ---------- Stage 1: Build the JAR ----------
-FROM gradle:8.7-jdk21 AS build
+# Stage 1: Build stage
+FROM eclipse-temurin:17-jdk-jammy AS build
 WORKDIR /app
 
-# Copy Gradle wrapper files
-COPY build.gradle settings.gradle gradlew ./
-COPY gradle ./gradle
+# Copy gradle executable and wrapper
+COPY gradlew .
+COPY gradle gradle
 
-# ✅ Fix permission issue
+# Copy build files to cache dependencies
+COPY build.gradle settings.gradle ./
+
+# Give execution permission and download dependencies (layer caching)
 RUN chmod +x gradlew
-
-# Download dependencies
 RUN ./gradlew dependencies --no-daemon
 
-# Copy source
-COPY src ./src
+# Copy the rest of the source code and build the jar
+COPY src src
+RUN ./gradlew bootJar --no-daemon
 
-# Build JAR
-RUN ./gradlew clean build -x test --no-daemon
-
-
-# ---------- Stage 2: Runtime ----------
-FROM eclipse-temurin:21-jre-alpine
+# Stage 2: Runtime stage
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
+# Create a non-root user for security
+RUN addgroup --system spring && adduser --system spring --ingroup spring
+USER spring
+
+# Copy the jar from the build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
+# Expose the default Spring Boot port
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
