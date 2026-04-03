@@ -19,22 +19,40 @@ public class CartService {
 
     // ✅ Get or Create Cart
     public Cart getCart(String userId) {
-        if(userId == null || userId.isEmpty()) {
+        if (userId == null || userId.isEmpty()) {
             throw new CustomDataException("User ID cannot be null or empty");
         }
+        log.info("Fetching cart for userId={}", userId);
         return cartRepository.findByUserId(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
             newCart.setItems(new ArrayList<>());
             newCart.setTotalAmount(0.0);
-            return cartRepository.save(newCart);
+            return newCart;
         });
+    }
+
+    public Cart createCart(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            throw new CustomDataException("User ID cannot be null or empty");
+        }
+        log.info("Creating cart for userId={}", userId);
+        Cart newCart = new Cart();
+        newCart.setUserId(userId);
+        newCart.setItems(new ArrayList<>());
+        newCart.setTotalAmount(0.0);
+        return cartRepository.save(newCart);
     }
 
     // ✅ Add Item to Cart
     public Cart addItem(String userId, Cart.CartItem newItem) {
 
-        Cart cart = getCart(userId);
+        Cart cart;
+        if (cartRepository.existsByUserId(userId)) {
+            cart = getCart(userId);
+        } else {
+            cart = createCart(userId);
+        }
         Optional<Cart.CartItem> existingItem = cart.getItems().stream().filter(item -> item.getProductId().equals(newItem.getProductId())).findFirst();
 
         if (existingItem.isPresent()) {

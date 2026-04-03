@@ -3,7 +3,9 @@ package com.euphoria.demo.service;
 import com.euphoria.demo.dto.LoginDto;
 import com.euphoria.demo.dto.Response;
 import com.euphoria.demo.dto.SignupDto;
+import com.euphoria.demo.model.Address;
 import com.euphoria.demo.model.User;
+import com.euphoria.demo.repository.AddressRepository;
 import com.euphoria.demo.repository.UserRepository;
 import com.euphoria.demo.security.CustomUserDetails;
 import com.euphoria.demo.security.JwtUtil;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -28,6 +31,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     private JwtUtil jwtUtil;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AddressRepository addressRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -45,7 +50,6 @@ public class CustomUserDetailsService implements UserDetailsService {
             user.setName("New User");
             user.setPassword(""); // optional (or generate random)
             user.setRole("USER");
-            user.setAddresses(Collections.emptyList());
 
             userRepository.save(user);
         }
@@ -66,7 +70,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         user.setPhone(request.getPhone());
         user.setPassword(passwordEncoder.encode(request.getPassword())); // 🔐 hash
         user.setRole("USER");
-        user.setAddresses(Collections.emptyList());
 
         userRepository.save(user);
 
@@ -86,14 +89,63 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new Response("Login successful", Map.of("token", token, "user", user));
     }
 
-    public Response saveAddress(User.Address address, String email) {
+    public Response getUser(String email) {
         User user = userRepository.findByEmail(email);
         if (user == null) {
             return new Response("User not found", null);
         }
-        user.getAddresses().add(address);
-        userRepository.save(user);
-        log.info("Address added for user: {}", email);
-        return new Response("Address saved successfully", user.getAddresses());
+        log.info("Fetched user: {}", email);
+        return new Response("Addresses fetched successfully", user);
+    }
+
+    public Response addAddress(String email, Address address) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return new Response("User not found", null);
+        }
+        address.setUserEmail(email);
+        addressRepository.save(address);
+        log.info("Added address for user: {}", email);
+        return new Response("Address added successfully", address);
+    }
+
+    public Response getAddresses(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return new Response("User not found", null);
+        }
+        List<Address> addresses = addressRepository.findByUserEmail(email);
+        log.info("Fetched addresses for user: {}", email);
+        return new Response("Addresses fetched successfully", addresses);
+    }
+
+    public Response updateAddress(String email, String addressId, Address updatedAddress) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return new Response("User not found", null);
+        }
+        Address existingAddress = addressRepository.findById(addressId).orElse(null);
+        if (existingAddress == null || !existingAddress.getUserEmail().equals(email)) {
+            return new Response("Address not found or does not belong to user", null);
+        }
+        updatedAddress.setId(addressId);
+        updatedAddress.setUserEmail(email);
+        addressRepository.save(updatedAddress);
+        log.info("Updated address for user: {}", email);
+        return new Response("Address updated successfully", updatedAddress);
+    }
+
+    public Response deleteAddress(String email, String addressId) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return new Response("User not found", null);
+        }
+        Address existingAddress = addressRepository.findById(addressId).orElse(null);
+        if (existingAddress == null || !existingAddress.getUserEmail().equals(email)) {
+            return new Response("Address not found or does not belong to user", null);
+        }
+        addressRepository.deleteById(addressId);
+        log.info("Deleted address for user: {}", email);
+        return new Response("Address deleted successfully", addressId);
     }
 }

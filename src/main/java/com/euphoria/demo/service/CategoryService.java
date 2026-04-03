@@ -2,6 +2,7 @@ package com.euphoria.demo.service;
 
 import com.euphoria.demo.exception.CustomDataException;
 import com.euphoria.demo.model.Category;
+import com.euphoria.demo.model.Product;
 import com.euphoria.demo.repository.CategoryRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ public class CategoryService {
     // ✅ Get all categories
     public List<Category> getAllCategories() {
         log.info("Fetching all active categories");
-        return categoryRepository.findByActive(true);
+        return categoryRepository.findByActive(true).stream().filter(category -> !category.getName().equalsIgnoreCase("trending")).toList();
     }
 
     // ✅ Get by ID
@@ -37,9 +38,16 @@ public class CategoryService {
 
     // ✅ Delete category
     public void deleteCategory(String id) {
-        Category category = categoryRepository.findByName(id).orElseThrow(() -> new CustomDataException("Category not found"));
-        category.setActive(false); // Soft delete by marking as inactive
+        categoryRepository.findByName(id).orElseThrow(() -> new CustomDataException("Category not found"));
+//        category.setActive(false); // Soft delete by marking as inactive
         log.info("Soft deleting category: {}", id);
-        categoryRepository.save(category);
+        categoryRepository.deleteByName(id);
+
+        //remove category from products category array in product repo
+        List<Product> products = new ProductService().filterByCategory(List.of(id));
+        products.forEach(product -> {
+            List<String> updatedCategories = product.getCategory().stream().filter(cat -> !cat.equalsIgnoreCase(id)).toList();
+            product.setCategory(updatedCategories);
+        });
     }
 }

@@ -1,5 +1,6 @@
 package com.euphoria.demo.model;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,6 @@ import java.util.ArrayList;
 @Document(collection = "wishlists")
 public class WishList {
     @Id
-    private String id;
     private String userId;
     private List<WishListItem> products = new ArrayList<>();
 
@@ -22,6 +22,7 @@ public class WishList {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class WishListItem {
+        @NotBlank
         private String productId;
         private String name;
         private Double price;

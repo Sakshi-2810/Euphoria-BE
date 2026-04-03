@@ -1,20 +1,23 @@
 package com.euphoria.demo.model;
 
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import lombok.Data;
+
 import java.util.List;
 
 @Data
 @Document(collection = "products")
 public class Product {
     @Id
-    private String id; // MongoDB uses Strings for IDs by default
+    private String productId; // MongoDB uses Strings for IDs by default
+    @NotBlank
     private String name;
     private String description;
     private Double price;
     private List<String> category;
-    private String imageUrl;
+    private String image;
 
     // Gallery support for multiple images/videos
     private List<String> gallery;

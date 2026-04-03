@@ -7,8 +7,10 @@ import com.euphoria.demo.service.WishListService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping("/wishlist")
 public class WishListController {
@@ -32,8 +34,8 @@ public class WishListController {
     @PostMapping("/add")
     public ResponseEntity<Response> addProduct(@RequestBody WishList.WishListItem product) {
         String userId = getCurrentUserId();
-        WishList wishlist = wishListService.addProduct(userId, product);
-        return ResponseEntity.ok(new Response("Product added", wishlist));
+        Response response = wishListService.addProduct(userId, product);
+        return ResponseEntity.ok(response);
     }
 
     // ✅ Remove product

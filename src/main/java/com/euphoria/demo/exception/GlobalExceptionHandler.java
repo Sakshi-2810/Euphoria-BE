@@ -1,6 +1,7 @@
 package com.euphoria.demo.exception;
 
 import com.euphoria.demo.dto.Response;
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,5 +36,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomDataException.class)
     public ResponseEntity<Response> handleCustomDataException(CustomDataException ex) {
         return new ResponseEntity<>(new Response(ex.getMessage(), null), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<Response> handleExpiredJwtException(ExpiredJwtException ex) {
+        return new ResponseEntity<>(new Response("Token has expired", null), HttpStatus.UNAUTHORIZED);
     }
 }

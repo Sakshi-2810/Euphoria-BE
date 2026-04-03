@@ -18,11 +18,13 @@ public class ProductService {
     }
 
     public Product getProductById(String id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+        return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
     public Product saveProduct(Product product) {
+        if (product.getImage().isBlank() && !product.getGallery().isEmpty()) {
+            product.setImage(product.getGallery().get(0));
+        }
         return productRepository.save(product);
     }
 
