@@ -15,6 +15,8 @@ import java.util.List;
 public class CategoryService {
 
     @Autowired
+    ProductService productService;
+    @Autowired
     private CategoryRepository categoryRepository;
 
     // ✅ Get all categories
@@ -44,7 +46,7 @@ public class CategoryService {
         categoryRepository.deleteByName(id);
 
         //remove category from products category array in product repo
-        List<Product> products = new ProductService().filterByCategory(List.of(id));
+        List<Product> products = productService.filterByCategory(List.of(id));
         products.forEach(product -> {
             List<String> updatedCategories = product.getCategory().stream().filter(cat -> !cat.equalsIgnoreCase(id)).toList();
             product.setCategory(updatedCategories);
