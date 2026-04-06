@@ -30,10 +30,10 @@ public class AuthController {
         return ResponseEntity.ok(userDetailsService.login(request));
     }
 
-    // ✅ 3. OAUTH LOGIN (Already exists)
+    // ✅ 3. OAUTH LOGIN
     @PostMapping("/oauth-login")
     public ResponseEntity<Response> oauthLogin(@RequestBody LoginDto request) {
-        Response response = userDetailsService.loginViaOAuth(request.getEmail());
+        Response response = userDetailsService.loginViaOAuth(request.getToken());
         return ResponseEntity.ok(response);
     }
 

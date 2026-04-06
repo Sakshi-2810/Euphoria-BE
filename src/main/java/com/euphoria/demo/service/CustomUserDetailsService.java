@@ -3,12 +3,15 @@ package com.euphoria.demo.service;
 import com.euphoria.demo.dto.LoginDto;
 import com.euphoria.demo.dto.Response;
 import com.euphoria.demo.dto.SignupDto;
+import com.euphoria.demo.exception.CustomDataException;
 import com.euphoria.demo.model.Address;
 import com.euphoria.demo.model.User;
 import com.euphoria.demo.repository.AddressRepository;
 import com.euphoria.demo.repository.UserRepository;
 import com.euphoria.demo.security.CustomUserDetails;
 import com.euphoria.demo.security.JwtUtil;
+import com.euphoria.demo.utils.GoogleUtils;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,6 +36,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AddressRepository addressRepository;
+    @Autowired
+    GoogleUtils googleUtils;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -40,21 +45,26 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new CustomUserDetails(user);
     }
 
-    public Response loginViaOAuth(String email) {
-        // 1. Check if user exists
-        User user = userRepository.findByEmail(email);
-        // 2. If NOT exists → create new user
-        if (user == null) {
-            user = new User();
-            user.setEmail(email);
-            user.setName("New User");
-            user.setPassword(""); // optional (or generate random)
-            user.setRole("USER");
-
-            userRepository.save(user);
+    public Response loginViaOAuth(String token) {
+        try {
+            GoogleIdToken.Payload payload = googleUtils.verifyGoogleToken(token);
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            User user = userRepository.findByEmail(email);
+            if (user == null) {
+                user = new User();
+                user.setEmail(email);
+                user.setName(name);
+                user.setPassword("");
+                user.setRole("USER");
+                userRepository.save(user);
+            }
+            log.info("User logged in via OAuth: {}", email);
+            return new Response("Login successful", Map.of("token", jwtUtil.generateToken(user.getEmail(), "USER"), "user", user));
+        } catch (Exception e) {
+            log.error("OAuth login failed: {}", e.getMessage());
+            throw new CustomDataException("Invalid OAuth token");
         }
-        log.info("User logged in via OAuth: {}", email);
-        return new Response("Login successful", jwtUtil.generateToken(user.getEmail(), "USER"));
     }
 
     public Response signup(SignupDto request) {

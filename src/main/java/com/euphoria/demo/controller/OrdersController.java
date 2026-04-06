@@ -26,8 +26,7 @@ public class OrdersController {
     @PostMapping("/place")
     public ResponseEntity<Response> placeOrder(@RequestBody Orders order) {
         order.setUserId(getCurrentUserId());
-        Orders savedOrder = ordersService.placeOrder(order);
-        return ResponseEntity.ok(new Response("Order placed successfully", savedOrder));
+        return ResponseEntity.ok(ordersService.placeOrder(order));
     }
 
     // ✅ Get all orders for current user
@@ -60,5 +59,12 @@ public class OrdersController {
     public ResponseEntity<Response> getAllOrders() {
         List<Orders> allOrders = ordersService.getAllOrders();
         return ResponseEntity.ok(new Response("All orders fetched", allOrders));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<Response> cancelOrder(@PathVariable String id) {
+        String userId = getCurrentUserId();
+        Response response = ordersService.cancelOrder(id, userId);
+        return ResponseEntity.ok(response);
     }
 }
