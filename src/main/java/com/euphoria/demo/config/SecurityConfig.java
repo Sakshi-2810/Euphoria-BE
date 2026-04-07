@@ -37,7 +37,6 @@ public class SecurityConfig {
 
                 // 2. Allow everything else (Products, Categories, Cart, Auth, etc.)
                 .anyRequest().permitAll());
-        //                .oauth2Login(oauth -> oauth.defaultSuccessUrl("/oauth-success", true));
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
